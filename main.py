@@ -6,7 +6,15 @@ import argparse
 from ultralytics import YOLO
 #library Supervision --> to make CV more simple
 import supervision as sv
+#numpy --> define polygon matrix
+import numpy as np
 
+ZONE_PARAMS=np.array([
+    [0,0],
+    [1280,0],
+    [1250,720],
+    [0,720]
+])
 
 #fungsi set resolusi
 def parse_arguments()->argparse.Namespace:
@@ -43,6 +51,12 @@ def main():
         text_scale=1
     ) 
 
+    #Instasisasi class PolygonZone (Supervision) untuk threshold
+    zone=sv.PolygonZone(polygon=ZONE_PARAMS,frame_resolution_wh=tuple(args.webcam_resolution))
+    #Gambarkan zona yang sebelumnya telah diinstasiasi di layar
+    zone_annotator=sv.PolygonZoneAnnotator(zone=zone,color=sv.Color.red())
+
+
     # cek kondisi variabel capture
     while True:
         #ambil data frame dan ret dari videocapture utk ditampilkan 
@@ -59,12 +73,17 @@ def main():
             for _,confidence,class_id,_
             in detections
         ]
+        #instansiasi objek labels untuk klasifikasi
         frame=box_annotator.annotate(
             scene=frame,
             detections=detections,
             labels=labels
         )
-        #instansiasi objek labels untuk 
+        
+        #mengaktifkan zona pada gambar yang diambil pada variabel detections
+        zone.trigger(detections=detections)
+        #menggambarkan zona pada frame yang dibuat
+        frame=zone_annotator.annotate(scene=frame)
 
         #tampilkan ke gui
         cv2.imshow("yolov8",frame)
