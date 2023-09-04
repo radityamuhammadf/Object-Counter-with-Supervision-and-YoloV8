@@ -9,11 +9,20 @@ import supervision as sv
 #numpy --> define polygon matrix
 import numpy as np
 
+# Full Size Screen Zone
+# ZONE_PARAMS=np.array([
+#     [0,0], #koordinat 1 -- kiri bawah
+#     [1280,0], #koordinat 2 -- kanan bawah
+#     [1280,720], #koordinat 3 -- kanan atas
+#     [0,720] #koordinat 4 -- kiri atas 
+# ])
+
+#Constrained Zone
 ZONE_PARAMS=np.array([
-    [0,0],
-    [1280,0],
-    [1250,720],
-    [0,720]
+    [1280//2,0], #koordinat 1 -- kiri bawah
+    [1280,0], #koordinat 2 -- kanan bawah
+    [1280,720], #koordinat 3 -- kanan atas
+    [1280//2,720] #koordinat 4 -- kiri atas 
 ])
 
 #fungsi set resolusi
@@ -54,7 +63,13 @@ def main():
     #Instasisasi class PolygonZone (Supervision) untuk threshold
     zone=sv.PolygonZone(polygon=ZONE_PARAMS,frame_resolution_wh=tuple(args.webcam_resolution))
     #Gambarkan zona yang sebelumnya telah diinstasiasi di layar
-    zone_annotator=sv.PolygonZoneAnnotator(zone=zone,color=sv.Color.red())
+    zone_annotator=sv.PolygonZoneAnnotator(
+        zone=zone,
+        color=sv.Color.red(),
+        thickness=2,
+        text_thickness=2,
+        text_scale=2
+    )
 
 
     # cek kondisi variabel capture
@@ -66,6 +81,8 @@ def main():
         
         #melalui supervision, deteksi objek dengan YOLOv8
         detections=sv.Detections.from_yolov8(result)
+        #filter yang dideteksi persons aja
+        detections=detections[detections.class_id==0] 
         #panggil objek bounding box untuk nempel di hasil deteksi pada gambar (source: capture)
         
         labels=[
